@@ -143,3 +143,49 @@ def plot_surface_3d(objective: "Objective", resolution: int = 120, ax: plt.Axes 
     ax.set_ylabel("y")
     ax.set_zlabel("loss")
     return ax
+
+
+def plot_training_curves(histories: dict, log_loss: bool = True):
+    """Compare optimizers from their Phase 2 training histories.
+
+    Draws loss-vs-epoch (left) and accuracy-vs-epoch (right), with a solid line
+    per optimizer for the training metric and a dashed line of the matching color
+    for the validation metric.
+
+    Args:
+        histories: Mapping ``optimizer_name -> history`` where each history is the
+            dict returned by ``workshoplib.training.train_model``.
+        log_loss: Use a log y-axis for the loss panel when all losses are positive.
+    """
+    fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(13, 5))
+
+    all_positive = True
+    for name, history in histories.items():
+        line = ax_loss.plot(history["train_loss"], label=f"{name} (train)")[0]
+        ax_loss.plot(
+            history["val_loss"], linestyle="--", color=line.get_color(),
+            label=f"{name} (val)",
+        )
+        if min(history["train_loss"]) <= 0 or min(history["val_loss"]) <= 0:
+            all_positive = False
+
+        acc_line = ax_acc.plot(history["train_acc"], label=f"{name} (train)")[0]
+        ax_acc.plot(
+            history["val_acc"], linestyle="--", color=acc_line.get_color(),
+            label=f"{name} (val)",
+        )
+
+    if log_loss and all_positive:
+        ax_loss.set_yscale("log")
+    ax_loss.set_title("Loss vs. epoch")
+    ax_loss.set_xlabel("epoch")
+    ax_loss.set_ylabel("cross-entropy loss")
+    ax_loss.legend(fontsize=7)
+
+    ax_acc.set_title("Accuracy vs. epoch")
+    ax_acc.set_xlabel("epoch")
+    ax_acc.set_ylabel("accuracy")
+    ax_acc.legend(fontsize=7)
+
+    fig.tight_layout()
+    return fig

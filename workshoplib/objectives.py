@@ -66,6 +66,43 @@ def _ill_conditioned_quadratic(xy: torch.Tensor) -> torch.Tensor:
     return x**2 + 25.0 * y**2
 
 
+def _rotated_ill_conditioned(xy: torch.Tensor) -> torch.Tensor:
+    """Rotated stretched bowl ``f = (x + y)^2 + 25 (x - y)^2``.
+
+    This is the same ill-conditioned bowl as above, but its steep and shallow
+    directions point along the diagonals ``(1, 1)`` and ``(1, -1)`` instead of
+    the coordinate axes. The curvature is gentle along ``x = y`` and steep
+    across it.
+
+    It exposes a bias of AdaGrad (and, more mildly, Adam): they rescale each
+    coordinate *independently*, which only lines up with the true curvature when
+    the steep/shallow directions happen to be the coordinate axes. Once the bowl
+    is rotated, per-coordinate scaling no longer matches the geometry, so AdaGrad
+    loses the big advantage it had on the axis-aligned version.
+    """
+    x = xy[..., 0]
+    y = xy[..., 1]
+    return (x + y) ** 2 + 25.0 * (x - y) ** 2
+
+
+def _abs_valley(xy: torch.Tensor) -> torch.Tensor:
+    """Sharp V-shaped valley ``f = |x| + |y|`` with its minimum at the origin.
+
+    The gradient is piecewise constant: along each axis it has magnitude 1 and
+    points toward 0. Starting from the far left, the ``x`` component of the
+    gradient points right at *every* step, while the ``y`` component just flips
+    sign as the path crosses the valley floor.
+
+    This is the simplest setting to see what momentum does: it accumulates the
+    consistently-rightward pull into a growing velocity (so it accelerates
+    toward the minimum), while the alternating ``y`` pulls tend to cancel. Plain
+    gradient descent, by contrast, can only move one fixed step per iteration.
+    """
+    x = xy[..., 0]
+    y = xy[..., 1]
+    return x.abs() + y.abs()
+
+
 def _rosenbrock(xy: torch.Tensor) -> torch.Tensor:
     """Classic banana valley ``f = (1 - x)^2 + 100 (y - x^2)^2``.
 
@@ -116,7 +153,23 @@ OBJECTIVES: dict[str, Objective] = {
         bounds=((-2.5, 2.5), (-1.0, 1.0)),
         minimizer=(0.0, 0.0),
         start=(-2.0, 0.8),
-        lrs={"sgd": 0.02, "momentum": 0.01, "adagrad": 0.5, "adam": 0.2},
+        lrs={"sgd": 0.03, "momentum": 0.01, "adagrad": 0.5, "adam": 0.2},
+    ),
+    "rotated_ill_conditioned": Objective(
+        name="Rotated ill-conditioned quadratic",
+        value=_rotated_ill_conditioned,
+        bounds=((-2.5, 2.5), (-2.5, 2.5)),
+        minimizer=(0.0, 0.0),
+        start=(-2.0, 0.),
+        lrs={"sgd": 0.015, "momentum": 0.015, "adagrad": 2., "adam": 0.2},
+    ),
+    "abs_valley": Objective(
+        name="Absolute-value valley (|x| + |y|)",
+        value=_abs_valley,
+        bounds=((-10, 3.5), (-2.0, 2.0)),
+        minimizer=(0.0, 0.0),
+        start=(-10.0, 1.0),
+        lrs={"sgd": 0.08, "momentum": 0.08, "adagrad": 0.3, "adam": 0.1},
     ),
     "rosenbrock": Objective(
         name="Rosenbrock",
@@ -124,7 +177,7 @@ OBJECTIVES: dict[str, Objective] = {
         bounds=((-2.0, 2.0), (-1.0, 3.0)),
         minimizer=(1.0, 1.0),
         start=(-1.5, 2.0),
-        lrs={"sgd": 0.0008, "momentum": 0.0006, "adagrad": 0.2, "adam": 0.1},
+        lrs={"sgd": 0.0005, "momentum": 0.0006, "adagrad": 0.2, "adam": 0.1},
     ),
     "saddle": Objective(
         name="Saddle",

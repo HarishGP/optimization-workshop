@@ -102,10 +102,14 @@ class Adam:
                 self.v = torch.zeros_like(param)
             self.t += 1
             grad = param.grad
-            self.m = self.beta1 * self.m + (1.0 - self.beta1) * grad
-            self.v = self.beta2 * self.v + (1.0 - self.beta2) * grad**2
-            m_hat = self.m / (1.0 - self.beta1**self.t)
-            v_hat = self.v / (1.0 - self.beta2**self.t)
+            # momentum term : combination of current gradient and previous momentum : same dimension as the gradient 
+            self.m = self.beta1 * self.m + (1.0 - self.beta1) * grad 
+            # AdaGrad term : combination of current gradient and previous gradient squared : same dimension as the gradient
+            self.v = self.beta2 * self.v + (1.0 - self.beta2) * grad**2 
+            # Correction term : to account for the initial values of m and v being too small. m_hat and v_hat are approximately equal to m and v for large t.
+            m_hat = self.m / (1.0 - self.beta1**self.t) # vector m is divided by a scalar
+            v_hat = self.v / (1.0 - self.beta2**self.t) # vector v is divided by a scalar
+
             param -= self.lr * m_hat / (torch.sqrt(v_hat) + self.eps)
 
 
