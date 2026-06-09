@@ -24,8 +24,8 @@ def make_mlp(input_dim=50, hidden_sizes=(16, 16), num_classes=2):
     layers = []
     in_features = input_dim
     for width in hidden_sizes:
-        layers.append(torch.nn.Linear(in_features, width))
+        layers.append(torch.nn.Linear(in_features, width, bias=False))
         layers.append(torch.nn.ReLU())
         in_features = width
-    layers.append(torch.nn.Linear(in_features, num_classes))
+    layers.append(torch.nn.Linear(in_features, num_classes, bias=False))
     return torch.nn.Sequential(*layers)

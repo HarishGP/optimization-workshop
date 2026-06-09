@@ -89,11 +89,11 @@ class Muon(torch.optim.Optimizer):
 
 
 _DEFAULT_LR = {
-    "sgd": 0.3,
-    "momentum": 0.1,
-    "adagrad": 0.05,
-    "adam": 3e-3,
-    "muon": 0.02,
+    "sgd": 1.,
+    "momentum": 0.5,
+    "adagrad": 0.02,
+    "adam": 1e-3,
+    "muon": 0.01,
 }
 
 

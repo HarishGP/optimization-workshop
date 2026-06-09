@@ -54,4 +54,4 @@ def make_odt_classification_data(
     x_val, y_val = x[:n_val], y[:n_val]
     x_train, y_train = x[n_val:], y[n_val:]
 
-    return x_train, y_train, x_val, y_val, meta
+    return x_train, y_train, x_val, y_val, meta, _tree
